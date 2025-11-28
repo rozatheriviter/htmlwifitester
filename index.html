@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chromebook WiFi & Coverage Tester</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>WiFi Coverage Tester</h1>
+            <p>Walk around your property to map connectivity.</p>
+        </header>
+
+        <div class="status-panel">
+            <div class="card">
+                <h2>Status</h2>
+                <div id="connection-status" class="status-indicator">Checking...</div>
+            </div>
+            <div class="card">
+                <h2>Network Info</h2>
+                <p><strong>Type:</strong> <span id="net-type">-</span></p>
+                <p><strong>Downlink:</strong> <span id="net-downlink">-</span> Mbps</p>
+                <p><strong>RTT:</strong> <span id="net-rtt">-</span> ms</p>
+            </div>
+            <div class="card">
+                <h2>Latency Test</h2>
+                <p><strong>Ping:</strong> <span id="ping-latency">-</span> ms</p>
+                <p><strong>Success Rate:</strong> <span id="ping-success">-</span>%</p>
+            </div>
+            <div class="card">
+                <h2>Location</h2>
+                <p><strong>Lat:</strong> <span id="geo-lat">-</span></p>
+                <p><strong>Lng:</strong> <span id="geo-lng">-</span></p>
+                <p><strong>Accuracy:</strong> <span id="geo-acc">-</span> m</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="start-btn">Start Recording</button>
+            <button id="stop-btn" disabled>Stop Recording</button>
+            <button id="export-btn" disabled>Export CSV</button>
+        </div>
+
+        <div class="log-container">
+            <h3>Event Log</h3>
+            <table id="log-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Event</th>
+                        <th>Ping</th>
+                        <th>Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be added here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
