@@ -90,26 +90,52 @@ class LineChart {
 
         const maxVal = Math.max(...this.data, 100) * 1.1; // Scale max + 10%
         const minVal = 0;
-
         const stepX = this.width / (this.maxPoints - 1);
 
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = '#007bff';
-        this.ctx.lineWidth = 2;
+        // Calculate points first
+        const points = this.data.map((val, i) => ({
+            x: i * stepX,
+            y: this.height - ((val - minVal) / (maxVal - minVal) * this.height)
+        }));
 
-        this.data.forEach((val, i) => {
-            const x = i * stepX;
-            const y = this.height - ((val - minVal) / (maxVal - minVal) * this.height);
-            if (i === 0) this.ctx.moveTo(x, y);
-            else this.ctx.lineTo(x, y);
-        });
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = '#007aff'; // Apple Blue
+        this.ctx.lineWidth = 2;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+
+        // Smooth curve
+        this.ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[i];
+            const p1 = points[i + 1];
+            const midX = (p0.x + p1.x) / 2;
+            const midY = (p0.y + p1.y) / 2;
+            // Use quadratic curve for smoothing, control point is p0 (approx)
+            // Actually, simpler smoothing:
+            // Just draw line for now, but use Bezier if we want perfect smoothness.
+            // Let's stick to a slightly smoothed standard approach:
+            // Curve from midpoint to midpoint.
+            if (i === 0) {
+                 this.ctx.lineTo(midX, midY);
+            } else {
+                 this.ctx.quadraticCurveTo(p0.x, p0.y, midX, midY);
+            }
+        }
+        // Connect to last point
+        this.ctx.lineTo(points[points.length-1].x, points[points.length-1].y);
 
         this.ctx.stroke();
 
-        // Fill area
-        this.ctx.lineTo((this.data.length - 1) * stepX, this.height);
+        // Fill area with gradient
+        this.ctx.lineTo(points[points.length-1].x, this.height);
         this.ctx.lineTo(0, this.height);
-        this.ctx.fillStyle = 'rgba(0, 123, 255, 0.1)';
+        this.ctx.closePath();
+
+        const gradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
+        gradient.addColorStop(0, 'rgba(0, 122, 255, 0.25)');
+        gradient.addColorStop(1, 'rgba(0, 122, 255, 0.0)');
+        this.ctx.fillStyle = gradient;
         this.ctx.fill();
     }
 }
@@ -189,34 +215,28 @@ class WifiTester {
                 return;
             }
 
-            // --- KEY FIX: Prioritize 'type' over 'effectiveType' ---
+            // Prioritize 'type' (wifi, ethernet) which is often missing in standard Chrome.
+            // If missing or unknown, just say 'Unknown' instead of misleading '4G'.
             let type = conn.type;
-            const effectiveType = conn.effectiveType;
 
-            // If 'type' is missing or generic 'unknown', try to deduce
             if (!type || type === 'unknown') {
-                if (effectiveType) {
-                     // If effectiveType says '4g', but we are on Desktop/ChromeOS, it's often misleading.
-                     // We display it but label it as 'Effective Speed'.
-                     type = `Effective: ${effectiveType.toUpperCase()}`;
-                } else {
-                    type = 'Unknown';
-                }
+                type = 'Unknown'; // User requested to remove misleading 'Effective' fallback
             } else {
-                // If we have a real type (wifi, ethernet, cellular), capitalize it
                 type = type.charAt(0).toUpperCase() + type.slice(1);
             }
 
             this.els.netType.textContent = type;
             this.els.netDownlink.textContent = conn.downlink || '?';
-            
+
             // Show where we got the info
-            const source = (conn.type && conn.type !== 'unknown') ? 'Network API (Type)' : 'Network API (Effective)';
+            const source = (conn.type && conn.type !== 'unknown') ? 'Network API' : 'Network API (Limited)';
             this.els.netSource.textContent = source;
         };
 
         if (navigator.connection) {
             navigator.connection.addEventListener('change', updateConnectionInfo);
+            // Polling to catch speed changes if event misses
+            setInterval(updateConnectionInfo, 5000);
             updateConnectionInfo();
         } else {
             this.els.netType.textContent = 'Not Supported';
